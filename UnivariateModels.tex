@@ -2024,4 +2024,1080 @@ When teaching or reviewing these plots, direct your attention to two vital geome
 \end{enumerate}
 \end{tcolorbox}
 
+\subsection*{The Cauchy and Laplace Distributions: Pathologies of Heavy Tails}
+
+When moving away from standard Gaussian assumptions, we cross paths with distributions whose tails degrade much slower than an exponential curve. These distributions provide robust alternatives for modeling real-world data plagued by anomalies, shocks, or extreme sparsity.
+
+---
+
+\subsubsection*{1. The Cauchy (Lorentz) Distribution}
+
+When the degree of freedom parameter of a Student $t$-distribution is set to its absolute lower bound ($\nu = 1$), it collapses into the **Cauchy distribution** (historically known in physics as the **Lorentz distribution**). 
+
+The probability density function (PDF) is defined as:
+\begin{equation}
+C(x \mid \mu, \gamma) = \frac{1}{\gamma \pi} \left[ 1 + \left( \frac{x - \mu}{\gamma} \right)^2 \right]^{-1} \tag{194}
+\end{equation}
+where $\mu$ represents the location parameter (the peak/median) and $\gamma > 0$ dictates the scale parameter (half-width at half-maximum).
+
+\paragraph{The Phenomenon of Severe Heavy Tails}
+The Cauchy distribution is famous for its exceptionally thick, polynomial tails ($x^{-2}$ decay), rendering it radically different from a Gaussian. To appreciate this contrast numerically, look at the spread of probability mass for standard variants ($\mu=0, \gamma=1$):
+
+\begin{quote}
+\textbf{Numerical Dispersion Comparison:}
+\begin{itemize}
+    \item \textbf{Standard Gaussian:} $95\%$ of all generated values are tightly clustered between $[-1.96, 1.96]$.
+    \item \textbf{Standard Cauchy:} $95\%$ of all generated values are scattered widely between $[-12.7, 12.7]$.
+\end{itemize}
+\end{quote}
+
+Because the tails contain a massive amount of probability weight, extreme outliers are treated as ordinary occurrences rather than impossible anomalies. 
+
+\paragraph{The Mean Pathology}
+The tails are so thick that the Cauchy distribution breaks standard statistical calculations. If you attempt to evaluate the expected value using its definition:
+\begin{equation*}
+\mathbb{E}[X] = \int_{-\infty}^{\infty} x \cdot C(x \mid \mu, \gamma) \, dx
+\end{equation*}
+the integral simplifies to an expression proportional to $\int \frac{x}{x^2} dx \approx \int \frac{1}{x} dx$, which yields $\infty - \infty$. Because this integral does not absolutely converge, \textbf{the Cauchy distribution has no well-defined mathematical mean or variance.} Taking the sample average of a Cauchy dataset will not converge to a single number; instead, the average will dance around erratically, dominated by successive massive spikes.
+
+---
+
+\subsubsection*{2. The Half-Cauchy Distribution}
+
+By taking a Cauchy distribution centered at the origin ($\mu = 0$) and "folding it over" on itself, we truncate the negative domain completely. All probability density is compressed exclusively onto the positive real line $\mathbb{R}^+$.
+
+The resulting **Half-Cauchy distribution** yields the following PDF:
+\begin{equation}
+C_+(x \mid \gamma) \triangleq \frac{2}{\pi \gamma} \left[ 1 + \left( \frac{x}{\gamma} \right)^2 \right]^{-1}, \quad x \ge 0 \tag{195}
+\end{equation}
+
+\begin{tcolorbox}[colback=yellow!5!white, colframe=yellow!60!black, title=Application in Bayesian Hierarchical Modeling]
+The Half-Cauchy distribution is a staple in modern Bayesian modeling. When selecting a prior distribution for scale parameters (such as the standard deviation $\sigma$ of a group), standard choices often suffer from severe limitations. 
+\begin{itemize}
+    \item Inverse-Gamma priors are highly sensitive near zero.
+    \item Uniform priors can allocate unearned weight to massive values.
+\end{itemize}
+The Half-Cauchy offers an elegant solution: it provides a **finite, stable density at the origin** ($x=0$), while its heavy polynomial tail gives the model complete freedom to scale up if the data demands it, without being choked by an exponential drop-off.
+\end{tcolorbox}
+
+---
+
+\subsubsection*{3. The Laplace Distribution}
+
+Another vital heavy-tailed profile is the **Laplace distribution**, frequently referred to as the **double-sided exponential distribution**. Visually, it resembles two distinct exponential decay curves stitched back-to-back at a sharp, non-differentiable apex.
+
+The PDF is parameterized by a location parameter $\mu$ and a scale parameter $b > 0$:
+\begin{equation}
+\text{Laplace}(y \mid \mu, b) \triangleq \frac{1}{2b} \exp \left( -\frac{|y - \mu|}{b} \right) \tag{196}
+\end{equation}
+
+Unlike the Cauchy distribution, the tail decay of a Laplace curve ($\exp(-|y|)$) is sharper than a polynomial, meaning its foundational moments converge perfectly.
+
+\paragraph{Core Properties:}
+The fundamental properties of the Laplace distribution are summarized below:
+\begin{equation}
+\text{Mean} = \mu, \quad \text{Mode} = \mu, \quad \text{Variance} = 2b^2 \tag{197}
+\end{equation}
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{lll}
+\hline
+\textbf{Property} & \textbf{Gaussian Distribution} & \textbf{Laplace Distribution} \\ \hline
+\textbf{Core Shape} & Smooth, parabolic apex & Sharp, pointed cusp (Apex) \\
+\textbf{Tail Behavior} & Light Tails ($\propto \exp(-y^2)$) & Heavy Tails ($\propto \exp(-|y|)$) \\
+\textbf{Outlier Sensitivity} & Highly sensitive & Robust against anomalies \\
+\textbf{Optimization Penalty} & $L_2$ Loss Squared ($|y-\mu|^2$) & $L_1$ Absolute Loss ($|y-\mu|$) \\ \hline
+\end{tabular}
+\caption{Structural and optimization contrasts between Gaussian and Laplace profiles.}
+\label{tab:laplace_vs_gaussian}
+\end{table}
+
+\paragraph{Machine Learning Foundations: Robustness and Sparsity}
+The mathematical architecture of the Laplace distribution underpins two foundational methodologies in linear regression and machine learning:
+
+\begin{enumerate}
+    \item \textbf{Robust Linear Regression ($L_1$ Regression):} When assuming a Gaussian noise structure in a data pipeline, optimizing the model relies on minimizing the sum of squared errors ($L_2$ loss). This framework is highly vulnerable to outliers, as squaring a massive residual warps the entire model. Assuming a **Laplace noise distribution** changes the optimization target to an absolute error penalty ($L_1$ loss). Because errors are not squared, the resulting regression line remains stable and unaffected by distant anomalies.
+    \item \textbf{Sparse Linear Regression (The LASSO):} In a Bayesian framework, placing a Laplace prior directly over the model weight parameters $w$ is mathematically equivalent to adding an $L_1$ regularization penalty (LASSO). Because the Laplace distribution features a sharp spike right at the origin ($\mu=0$), maximizing the posterior probability forces irrelevant or weak feature weights to drop down to exactly zero, producing highly interpretable, sparse models.
+\end{enumerate}
+
+\subsection*{The Gamma and Beta Frameworks: From First Principles to Continuous Distributions}
+
+To understand the Beta and Gamma distributions, we must first demystify the specialized functions that anchor them. These functions serve as continuous generalizations of discrete operations, allowing us to compute areas under curves that bound probabilities between $(0, \infty)$ and $[0, 1]$.
+
+---
+
+\subsubsection*{1. Mathematical Primer: The Gamma Function $\Gamma(a)$}
+
+In discrete mathematics, the factorial operation $n! = n \times (n-1) \times \dots \times 1$ is highly restrictive because it only handles non-negative integers. The **Gamma function**, denoted as $\Gamma(a)$, is an elegant continuous extension of the factorial concept to the real (and complex) domain.
+
+For any real number $a > 0$, the Gamma function is defined by the following improper integral:
+\begin{equation}
+\Gamma(a) \triangleq \int_{0}^{\infty} x^{a-1} e^{-x} \, dx \tag{200}
+\end{equation}
+
+\paragraph{Derivation of the Factorial Property}
+To understand why this integral mirrors a factorial, we can apply integration by parts ($\int u \, dv = uv - \int v \, du$). Let us evaluate $\Gamma(a+1)$:
+\begin{equation*}
+\Gamma(a+1) = \int_{0}^{\infty} x^{a} e^{-x} \, dx
+\end{equation*}
+Setting $u = x^a \implies du = a x^{a-1} dx$, and $dv = e^{-x} dx \implies v = -e^{-x}$:
+\begin{align*}
+\Gamma(a+1) &= \left[ -x^a e^{-x} \right]_{0}^{\infty} - \int_{0}^{\infty} \left( -e^{-x} \right) \cdot a x^{a-1} \, dx \\
+&= \left( \lim_{x \to \infty} \frac{-x^a}{e^x} - 0 \right) + a \int_{0}^{\infty} x^{a-1} e^{-x} \, dx
+\end{align*}
+By L'Hôpital's Rule, the exponential term $e^x$ dominates the polynomial $x^a$ as $x \to \infty$, causing the boundary term to collapse to zero. This leaves us with a fundamental recurrence relation:
+\begin{equation*}
+\Gamma(a+1) = a \cdot \Gamma(a)
+\end{equation*}
+
+If we anchor this relation with a base case where $a=1$:
+\begin{equation*}
+\Gamma(1) = \int_{0}^{\infty} e^{-x} \, dx = \left[ -e^{-x} \right]_{0}^{\infty} = 0 - (-1) = 1
+\end{equation*}
+By applying the recurrence sequentially for any positive integer $n$:
+\begin{align*}
+\Gamma(n) &= (n-1) \cdot \Gamma(n-1) \\
+&= (n-1) \cdot (n-2) \cdot \Gamma(n-2) \\
+&= (n-1)!
+\end{align*}
+Thus, $\Gamma(a)$ acts exactly like a shifted factorial function, meaning $\Gamma(5) = 4! = 24$.
+
+---
+
+\subsubsection*{2. Mathematical Primer: The Beta Function $B(a, b)$}
+
+While the Gamma function scales across an infinite domain, the **Beta function** handles areas constrained within a finite interval $[0, 1]$. It is defined by the following integral for $a > 0, b > 0$:
+\begin{equation*}
+B(a, b) \triangleq \int_{0}^{1} x^{a-1} (1-x)^{b-1} \, dx
+\end{equation*}
+
+The Beta function and the Gamma function share an intimate relationship, which allows us to bypass calculating this integral directly:
+\begin{equation}
+B(a, b) = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a + b)} \tag{199}
+\end{equation}
+
+\paragraph{Intuitive Numerical Example:}
+Suppose we need to evaluate the area under the curve $x^2(1-x)^3$ from $0$ to $1$. This corresponds to finding $B(3, 4)$. Using our identity:
+\begin{equation*}
+B(3, 4) = \frac{\Gamma(3)\Gamma(4)}{\Gamma(3+4)} = \frac{2! \cdot 3!}{6!} = \frac{2 \cdot 6}{720} = \frac{12}{720} = \frac{1}{60}
+\end{equation*}
+Instead of tedious polynomial expansion and term-by-term integration, the product of continuous factorials yields the exact normalization area instantly.
+
+---
+
+\subsubsection*{3. The Beta Distribution}
+
+The **Beta distribution** leverages this exact behavior to construct a continuous probability density over the bounded interval $[0, 1]$. This makes it ideal for modeling variables representing proportions, probabilities, percentages, or allocation allocations.
+
+Its probability density function (PDF) is defined as:
+\begin{equation}
+\text{Beta}(x \mid a, b) = \frac{1}{B(a, b)} x^{a-1} (1 - x)^{b-1} \tag{198}
+\end{equation}
+The fraction $\frac{1}{B(a,b)}$ serves purely as the normalization constant, ensuring that the total area under the density curve sums up to exactly $1$.
+
+\paragraph{Deconstructing Shape Constraints ($a$ and $b$)}
+The parameters $a$ and $b$ can be thought of as pseudo-counts or tuning levers that morph the distribution's shape:
+\begin{itemize}
+    \item \textbf{Uniform Uniformity ($a=1, b=1$):} The function simplifies to $x^0(1-x)^0 = 1$. The density is perfectly flat over $[0, 1]$.
+    \item \textbf{Bimodal Spikes ($a < 1, b < 1$):} As $x \to 0$ or $x \to 1$, the negative exponents push the density values toward infinity, creating a U-shaped distribution where mass concentrates heavily at the absolute boundaries.
+    \item \textbf{Unimodal Bell ($a > 1, b > 1$):} The curve peaks gracefully at an interior point between 0 and 1, tapering down to zero at the boundaries.
+\end{itemize}
+
+\paragraph{Properties and Derivation of the Mean}
+The structural metrics of the Beta distribution are given by:
+\begin{equation}
+\text{Mean} = \frac{a}{a+b}, \quad \text{Mode} = \frac{a - 1}{a + b - 2}, \quad \text{Variance} = \frac{ab}{(a+b)^2(a+b+1)} \tag{201}
+\end{equation}
+*(Note: The equation for the mode holds true for $a>1, b>1$. If $a<1$ and $b \ge 1$, the peak shifts to $0$; if $a \ge 1$ and $b<1$, it rests at $1$.)*
+
+\paragraph{Mathematical Derivation of the Mean:}
+By using the definition of expected value ($\mathbb{E}[X] = \int x \cdot p(x) dx$):
+\begin{align*}
+\mathbb{E}[X] &= \int_{0}^{1} x \cdot \frac{1}{B(a, b)} x^{a-1}(1-x)^{b-1} \, dx \\
+&= \frac{1}{B(a, b)} \int_{0}^{1} x^{(a+1)-1}(1-x)^{b-1} \, dx
+\end{align*}
+The remaining integral is simply the definition of a new Beta function with shifted parameters: $B(a+1, b)$. Substituting this back gives:
+\begin{equation*}
+\mathbb{E}[X] = \frac{B(a+1, b)}{B(a, b)} = \frac{\Gamma(a+1)\Gamma(b)}{\Gamma(a+1+b)} \cdot \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
+\end{equation*}
+Applying the Gamma recurrence rule $\Gamma(a+1) = a\Gamma(a)$ and $\Gamma(a+b+1) = (a+b)\Gamma(a+b)$:
+\begin{equation*}
+\mathbb{E}[X] = \frac{a\Gamma(a)}{\Gamma(a)} \cdot \frac{\Gamma(a+b)}{(a+b)\Gamma(a+b)} = \frac{a}{a+b}
+\end{equation*}
+
+---
+
+\subsubsection*{4. The Gamma Distribution}
+
+While the Beta distribution governs variables restricted within a closed box $[0,1]$, the **Gamma distribution** is designed for positive real-valued continuous numbers ($x > 0$). It is highly favored for modeling waiting times, operational lifetimes, or as a conjugate prior for precision parameters in Bayesian statistics.
+
+The distribution can be parameterized in two distinct ways depending on the application context:
+
+\paragraph{Parameterization A: Shape and Rate}
+Using a shape parameter $a > 0$ and a rate parameter $b > 0$, the PDF is written as:
+\begin{equation}
+\text{Ga}(x \mid \text{shape} = a, \text{rate} = b) \triangleq \frac{b^a}{\Gamma(a)} x^{a-1} e^{-xb} \tag{202}
+\end{equation}
+Here, the rate $b$ scales how rapidly the exponential decay component drops off over time.
+
+\paragraph{Parameterization B: Shape and Scale}
+Alternatively, substituting the scale parameter $s = 1/b$ yields:
+\begin{equation}
+\text{Ga}(x \mid \text{shape} = a, \text{scale} = s) \triangleq \frac{1}{s^a \Gamma(a)} x^{a-1} e^{-x/s} \tag{203}
+\end{equation}
+
+\paragraph{Core Properties:}
+The expected location and variability of a Gamma random variable under the rate parameterization follow clean structural paths:
+\begin{equation*}
+\text{Mean} = \frac{a}{b}, \quad \text{Mode} = \max\left(\frac{a - 1}{b}, 0\right), \quad \text{Variance} = \frac{a}{b^2}
+\end{equation*}
+
+If $a \le 1$, the term $x^{a-1}$ possesses a negative or zero exponent, which forces the maximum height (mode) of the curve to sit directly at the origin ($x=0$). When the shape $a > 1$, the competing powers of polynomial growth ($x^{a-1}$) and exponential decay ($e^{-xb}$) force the distribution to form a smooth, right-skewed peak away from zero before gradually winding down.
+
+\subsection*{Special Cases of the Gamma Distribution Family}
+
+The Gamma distribution acts as a master distribution profile. By altering its shape parameter $a$ and rate/scale parameter $b$, it collapses into several ubiquitous continuous distributions used across physics, statistics, and machine learning.
+
+For quick reference, recall the standard shape-rate Gamma PDF framework:
+\begin{equation*}
+\text{Ga}(x \mid a, b) = \frac{b^a}{\Gamma(a)} x^{a-1} e^{-bx}
+\end{equation*}
+
+---
+
+\subsubsection*{1. The Exponential Distribution}
+
+When the shape parameter of a Gamma distribution is locked to exactly unity ($a = 1$), it simplifies into the **Exponential distribution**. Substituting $a = 1$ and a rate parameter $b = \lambda$ directly into the Gamma formula yields:
+\begin{equation}
+\text{Expon}(x \mid \lambda) \triangleq \text{Ga}(x \mid \text{shape} = 1, \text{rate} = \lambda) = \lambda e^{-\lambda x} \tag{204}
+\end{equation}
+*(Note that $\Gamma(1) = 0! = 1$ and $x^{1-1} = x^0 = 1$.)*
+
+\paragraph{Physical Intuition and The Poisson Connection}
+The Exponential distribution models the **waiting time between continuous, independent events** occurring within a stable Poisson process running at a constant average rate $\lambda$. For example, if an server handles an average of $\lambda$ requests per millisecond, the duration of time separating any two incoming requests follows an Exponential curve.
+
+\paragraph{The Memoryless Property Derivation}
+The Exponential distribution is the only continuous distribution that is completely "memoryless". Formally, this means the probability of waiting an additional time $t$, given that you have already waited a time $s$, is identical to the baseline probability of waiting a time $t$ from the absolute start.
+
+Mathematically, this states $P(X > s + t \mid X > s) = P(X > t)$. We can prove this using the survival function $P(X > x) = \int_{x}^{\infty} \lambda e^{-\lambda u} \, du = e^{-\lambda x}$:
+\begin{align*}
+P(X > s + t \mid X > s) &= \frac{P(X > s + t \cap X > s)}{P(X > s)} \\
+&= \frac{P(X > s + t)}{P(X > s)} \\
+&= \frac{e^{-\lambda(s + t)}}{e^{-\lambda s}} = \frac{e^{-\lambda s} \cdot e^{-\lambda t}}{e^{-\lambda s}} = e^{-\lambda t} = P(X > t)
+\end{align*}
+If you are waiting for a component to fail under an exponential model, the fact that it has survived for 100 hours without a glitch does not make it any more or less likely to fail in the next hour.
+
+---
+
+\subsubsection*{2. The Chi-Squared Distribution ($\chi^2_\nu$)}
+
+The **Chi-squared distribution** is generated by setting the Gamma shape parameter to half of an arbitrary integer $\nu$, and setting the rate parameter to exactly $\frac{1}{2}$:
+\begin{equation}
+\chi^2_\nu(x) \triangleq \text{Ga}\left(x \mid \text{shape} = \frac{\nu}{2}, \text{rate} = \frac{1}{2}\right) = \frac{1}{2^{\nu/2}\Gamma(\nu/2)} x^{(\nu/2)-1} e^{-x/2} \tag{205}
+\end{equation}
+where $\nu$ is a positive integer denoting the **degrees of freedom**. 
+
+\paragraph{First-Principles Derivation from standard Gaussians}
+The Chi-squared profile explicitly tracks the distribution of the **sum of squared independent standard normal random variables**. Let's derive this relationship from scratch for a single degree of freedom ($\nu = 1$).
+
+Let $Z \sim \mathcal{N}(0, 1)$ be a standard normal variable, and let $S = Z^2$. We find the probability density of $S$ using a Cumulative Distribution Function (CDF) transformation technique:
+\begin{align*}
+F_S(s) = P(S \le s) &= P(Z^2 \le s) \\
+&= P(-\sqrt{s} \le Z \le \sqrt{s}) \\
+&= \Phi(\sqrt{s}) - \Phi(-\sqrt{s})
+\end{align*}
+To convert this CDF into a probability density function $f_S(s)$, we take the derivative with respect to $s$ utilizing the chain rule:
+\begin{equation*}
+f_S(s) = \frac{d}{ds} \left[ \Phi(\sqrt{s}) - \Phi(-\sqrt{s}) \right] = \phi(\sqrt{s}) \cdot \frac{1}{2\sqrt{s}} - \phi(-\sqrt{s}) \cdot \left(-\frac{1}{2\sqrt{s}}\right)
+\end{equation*}
+Because the standard normal density $\phi(z) = \frac{1}{\sqrt{2\pi}}e^{-z^2/2}$ is completely symmetric, $\phi(\sqrt{s}) = \phi(-\sqrt{s})$. Combining the two terms yields:
+\begin{equation*}
+f_S(s) = 2 \cdot \phi(\sqrt{s}) \cdot \frac{1}{2\sqrt{s}} = \frac{1}{\sqrt{2\pi}} s^{-1/2} e^{-s/2}
+\end{equation*}
+Now, let's look at what happens if we plug $\nu = 1$ directly into the structural template for a Chi-squared/Gamma setup on Equation (205). Knowing that $\Gamma(1/2) = \sqrt{\pi}$:
+\begin{equation*}
+\chi^2_1(s) = \frac{1}{2^{1/2}\Gamma(1/2)} s^{(1/2)-1} e^{-s/2} = \frac{1}{\sqrt{2\pi}} s^{-1/2} e^{-s/2}
+\end{equation*}
+The mathematical match is absolute. By leveraging the additive convolution properties of independent Gamma profiles (summing independent Gamma variables sharing a rate parameter $b$ simply aggregates their shape parameters $a$), adding $\nu$ independent copies of $Z^2$ shifts the shape from $\frac{1}{2}$ to $\frac{\nu}{2}$, yielding the full multi-dimensional $\chi^2_\nu$ distribution.
+
+---
+
+\subsubsection*{3. The Inverse Gamma Distribution}
+
+If a continuous positive random variable $X$ scales along a standard Gamma track, its multiplicative reciprocal $Y = \frac{1}{X}$ maps along an **Inverse Gamma (IG) distribution**.
+
+The explicit probability density function is written as follows:
+\begin{equation}
+\text{IG}(x \mid \text{shape} = a, \text{scale} = b) \triangleq \frac{b^a}{\Gamma(a)} x^{-(a+1)} e^{-b/x} \tag{206}
+\end{equation}
+
+\paragraph{Derivation via Global Change of Variables}
+We can formally prove this structural layout using the foundational univariate transformation rule: $f_Y(y) = f_X(g^{-1}(y)) \cdot \left| \frac{dx}{dy} \right|$.
+
+Let $X \sim \text{Ga}(a, b)$ and set the target transformation to $Y = \frac{1}{X}$.
+\begin{enumerate}
+    \item \textbf{Invert the relation:} $X = \frac{1}{Y}$
+    \item \textbf{Compute the Jacobian modifier:} $\frac{dx}{dy} = \frac{d}{dy}\left(y^{-1}\right) = -y^{-2} = -\frac{1}{y^2}$
+    \item \textbf{Take the absolute value:} $\left| \frac{dx}{dy} \right| = \frac{1}{y^2}$
+\end{enumerate}
+Substituting these terms back into the original master Gamma PDF equation:
+\begin{align*}
+f_Y(y) &= f_X\left(\frac{1}{y}\right) \cdot \frac{1}{y^2} \\
+&= \left[ \frac{b^a}{\Gamma(a)} \left(\frac{1}{y}\right)^{a-1} e^{-b/y} \right] \cdot \frac{1}{y^2} \\
+&= \frac{b^a}{\Gamma(a)} y^{-(a-1)} \cdot y^{-2} \cdot e^{-b/y} \\
+&= \frac{b^a}{\Gamma(a)} y^{-(a+1)} e^{-b/y}
+\end{align*}
+Swapping out the arbitrary placeholder variable $y$ for $x$ brings us perfectly back to Equation (206).
+
+\paragraph{Key Metric Realities and Moment Restrictions}
+The statistical properties of the Inverse Gamma configuration behave as follows:
+\begin{equation}
+\text{Mean} = \frac{b}{a - 1}, \quad \text{Mode} = \frac{b}{a + 1}, \quad \text{Variance} = \frac{b^2}{(a - 1)^2(a - 2)} \tag{207}
+\end{equation}
+
+\begin{tcolorbox}[colback=red!5!white, colframe=red!60!black, title=Critical Mathematical Boundary Conditions]
+Because of the heavy, polynomial polynomial polynomial tail component ($x^{-(a+1)}$) pulling weight as $x \to \infty$, the existence of foundational moments depends entirely on the size of the shape parameter $a$:
+\begin{itemize}
+    \item \textbf{The Mean} ($\mathbb{E}[X]$) only converges to a stable real number if \textbf{$a > 1$}. If $a \le 1$, the integration fails to bound, and the mean blows up to infinity.
+    \item \textbf{The Variance} ($\text{Var}(X)$) only converges if \textbf{$a > 2$}. If your shape parameter falls inside the zone $1 < a \le 2$, your distribution possesses a clean expected mean location, but its variability is infinitely unbounded.
+\end{itemize}
+\end{tcolorbox}
+
+\paragraph{Derivation of the Expected Mean Value}
+To see exactly why these boundary constraints emerge, let us work through the integral expectation step-by-step:
+\begin{align*}
+\mathbb{E}[Y] &= \int_{0}^{\infty} y \cdot \text{IG}(y \mid a, b) \, dy \\
+&= \int_{0}^{\infty} y \cdot \frac{b^a}{\Gamma(a)} y^{-(a+1)} e^{-b/y} \, dy \\
+&= \frac{b^a}{\Gamma(a)} \int_{0}^{\infty} y^{-a} e^{-b/y} \, dy
+\end{align*}
+To evaluate this integral easily, let's reverse our original transformation by setting a dummy variable $u = \frac{b}{y} \implies y = \frac{b}{u}$. The differential transforms as $dy = -\frac{b}{u^2} du$. Adjusting limits of integration ($y=0 \implies u=\infty$, and $y=\infty \implies u=0$):
+\begin{align*}
+\mathbb{E}[Y] &= \frac{b^a}{\Gamma(a)} \int_{\infty}^{0} \left(\frac{b}{u}\right)^{-a} e^{-u} \left(-\frac{b}{u^2}\right) \, du \\
+&= \frac{b^a}{\Gamma(a)} \int_{0}^{\infty} b^{-a} u^{a} e^{-u} \cdot b \cdot u^{-2} \, du \\
+&= \frac{b^a \cdot b^{-a} \cdot b}{\Gamma(a)} \int_{0}^{\infty} u^{a-2} e^{-u} \, du \\
+&= \frac{b}{\Gamma(a)} \int_{0}^{\infty} u^{(a-1)-1} e^{-u} \, du
+\end{align*}
+Notice that the remaining integral matches the definition of a standard Gamma function: $\Gamma(a-1)$. Substituting this identity:
+\begin{equation*}
+\mathbb{E}[Y] = b \cdot \frac{\Gamma(a-1)}{\Gamma(a)}
+\end{equation*}
+Using the fundamental factorial drop-down property $\Gamma(a) = (a-1)\Gamma(a-1)$, we simplify our final structural fraction:
+\begin{equation*}
+\mathbb{E}[Y] = b \cdot \frac{\Gamma(a-1)}{(a-1)\Gamma(a-1)} = \frac{b}{a-1}
+\end{equation*}
+Because the definition of the function $\Gamma(a-1)$ requires its interior parameter to be strictly greater than zero ($a-1 > 0$), this elegant proof demonstrates exactly why the mean cannot exist unless $a > 1$.
+
+\subsection*{The Empirical Distribution: Letting the Data Speak for Itself}
+
+Up until now, we have explored **parametric distributions** (like the Gaussian, Gamma, or Beta), which assume data adheres to a rigid, pre-defined geometric profile controlled by a few tuning parameters. If the true underlying data-generating process is highly complex, asymmetric, or multi-modal, forcing a parametric model onto it will introduce severe bias.
+
+The **empirical distribution** is a completely non-parametric alternative. Instead of fitting data to a curve, it constructs a distribution directly *from* the observed samples, placing equal probability weight on every single data point in your dataset.
+
+---
+
+\subsubsection*{1. Mathematical Primer: The Dirac Delta Function $\delta(x)$}
+
+To define a continuous probability density for individual discrete points, standard calculus breaks down. We require a specialized mathematical construct known as the **Dirac Delta function**, denoted as $\delta(x)$ (or more formally, a generalized function/distribution).
+
+Imagine an infinitely narrow, infinitely tall spike centered at $x = 0$. It possesses two defining properties:
+\begin{enumerate}
+    \item It is completely zero everywhere except at the exact origin:
+    \begin{equation*}
+    \delta(x) = 0 \quad \text{for all } x \neq 0
+    \end{equation*}
+    \item The total area packed underneath this infinitely thin spike is exactly $1$:
+    \begin{equation*}
+    \int_{-\infty}^{\infty} \delta(x) \, dx = 1
+    \end{equation*}
+\end{enumerate}
+
+If we shift this spike to center over a specific observed sample point $y$, we write it as $\delta_y(x) \equiv \delta(x - y)$. 
+
+\paragraph{The Sifting Property:}
+Because the delta function isolates a single point, integrating it alongside any continuous function $f(x)$ "sifts" out the value of that function at the spike's center:
+\begin{equation*}
+\int_{-\infty}^{\infty} f(x) \delta(x - y) \, dx = f(y)
+\end{equation*}
+
+---
+
+\subsubsection*{2. The Empirical Probability Density Function (ePDF)}
+
+Suppose we observe a dataset $\mathcal{D}$ consisting of $N$ real-valued samples drawn from an unknown distribution $p(X)$:
+\begin{equation*}
+\mathcal{D} = \left\{ x^{(1)}, x^{(2)}, \dots, x^{(n)}, \dots, x^{(N)} \right\}, \quad x^{(n)} \in \mathbb{R}
+\end{equation*}
+
+We can approximate the unknown continuous PDF by assigning an equal fraction of the total probability mass (exactly $1/N$) to each of our $N$ observed samples. Using our delta spikes to represent these point masses, the **empirical probability density function** is defined as:
+\begin{equation}
+\hat{p}_N(x) = \frac{1}{N} \sum_{n=1}^{N} \delta_{x^{(n)}}(x) \tag{208}
+\end{equation}
+
+Every time the model encounters an observed sample $x^{(n)}$, a spike of height $\frac{1}{N}$ appears. If you integrate this empirical density over the entire real line, the total probability sums perfectly to $1$:
+\begin{equation*}
+\int_{-\infty}^{\infty} \hat{p}_N(x) \, dx = \int_{-\infty}^{\infty} \left( \frac{1}{N} \sum_{n=1}^{N} \delta(x - x^{(n)}) \right) dx = \frac{1}{N} \sum_{n=1}^{N} \underbrace{\int_{-\infty}^{\infty} \delta(x - x^{(n)}) \, dx}_{1} = \frac{1}{N} (N) = 1
+\end{equation*}
+
+---
+
+\subsubsection*{3. The Empirical Cumulative Distribution Function (eCDF)}
+
+The cumulative distribution function (CDF) represents the total accumulated probability mass up to a threshold value $x$. For our empirical point masses, this accumulation creates a discrete "staircase" function.
+
+The **empirical cumulative distribution function** is defined as:
+\begin{equation}
+\hat{P}_N(x) \triangleq \frac{1}{N} \sum_{n=1}^{N} \mathbb{I}\left( x^{(n)} \le x \right) = \frac{1}{N} \sum_{n=1}^{N} u_{x^{(n)}}(x) \tag{209}
+\end{equation}
+where $\mathbb{I}(\cdot)$ is an indicator function, which can be elegantly represented as a standard **Heaviside step function** $u_y(x)$ centered at point $y$:
+\begin{equation}
+u_y(x) = 
+\begin{cases} 
+1 & \text{if } x \ge y \\ 
+0 & \text{if } x < y 
+\end{cases} \tag{210}
+\end{equation}
+
+As you read the eCDF graph from left to right along the $x$-axis, the accumulated probability sits at 0. The moment your threshold $x$ passes an observed data point $x^{(n)}$, the indicator function fires, causing the total probability to instantly jump vertically by a step-height of exactly $\frac{1}{N}$.
+
+---
+
+\subsubsection*{4. First-Principles Derivation: Linking the Staircase to the Spikes}
+
+In standard probability theory, the PDF is the fundamental derivative of the CDF: $p(x) = \frac{d}{dx}P(x)$. We can prove that this calculus identity holds true for our empirical formulas by examining how a step function differentiates into a delta spike.
+
+Let's compute the derivative of our empirical staircase $\hat{P}_N(x)$ with respect to $x$:
+\begin{align*}
+\frac{d}{dx} \hat{P}_N(x) &= \frac{d}{dx} \left[ \frac{1}{N} \sum_{n=1}^{N} u_{x^{(n)}}(x) \right] \\
+&= \frac{1}{N} \sum_{n=1}^{N} \left( \frac{d}{dx} u_{x^{(n)}}(x) \right)
+\end{align*}
+
+Consider the derivative of a single Heaviside step centered at $y$, defined as $\frac{d}{dx}u_y(x) = \lim_{\Delta \to 0} \frac{u_y(x + \Delta) - u_y(x)}{\Delta}$:
+\begin{itemize}
+    \item If $x < y$ or $x > y$, the step function is completely flat (slope $= 0$). Thus, the derivative is $0$.
+    \item At the exact point of transition ($x = y$), the function jumps instantly from $0$ to $1$, representing an infinite slope over zero width, while maintaining an integrated area transition of $1$.
+\end{itemize}
+This behavior is the definition of the Dirac Delta function: $\frac{d}{dx}u_y(x) = \delta(x - y)$. Substituting this back into our summation yields:
+\begin{equation*}
+\frac{d}{dx} \hat{P}_N(x) = \frac{1}{N} \sum_{n=1}^{N} \delta(x - x^{(n)}) = \hat{p}_N(x)
+\end{equation*}
+This explicitly proves that the derivative of our staircase eCDF is precisely our spike-filled ePDF.
+
+---
+
+\subsubsection*{5. Comprehensive Numerical Walkthrough}
+
+To visualize this mechanics, let's process a small dataset containing $N = 5$ collected samples:
+\begin{equation*}
+\mathcal{D} = \{ -2.0, \, 0.5, \, 0.5, \, 1.8, \, 4.2 \}
+\end{equation*}
+*(Notice that the value $0.5$ occurs twice, representing a repeated observation).*
+
+\paragraph{Evaluating the ePDF Structure}
+Using Equation (208), our empirical density is formed by 5 individual spikes, each carrying a weight of $\frac{1}{5} = 0.2$:
+\begin{equation*}
+\hat{p}_5(x) = 0.2\delta(-2.0) + 0.2\delta(0.5) + 0.2\delta(0.5) + 0.2\delta(1.8) + 0.2\delta(4.2)
+\end{equation*}
+Because $0.5$ appears twice, those overlapping spikes add up linearly, creating a single larger spike of weight $0.4$ at $x = 0.5$.
+
+\paragraph{Evaluating the eCDF Staircase Steps}
+Let's track how the cumulative staircase $\hat{P}_5(x)$ scales across space using Equation (209):
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\hline
+\textbf{Interval Field ($x$)} & \textbf{Active Samples Elements} & \textbf{Accumulated Mass $\hat{P}_5(x)$} \\ \hline
+$x < -2.0$ & None & $0 / 5 = \mathbf{0.0}$ \\
+$-2.0 \le x < 0.5$ & $\{-2.0\}$ & $1 / 5 = \mathbf{0.2}$ \\
+$0.5 \le x < 1.8$ & $\{-2.0, 0.5, 0.5\}$ & $3 / 5 = \mathbf{0.6}$ \textit{(Double Step Jump!)} \\
+$1.8 \le x < 4.2$ & $\{-2.0, 0.5, 0.5, 1.8\}$ & $4 / 5 = \mathbf{0.8}$ \\
+$x \ge 4.2$ & $\{-2.0, 0.5, 0.5, 1.8, 4.2\}$ & $5 / 5 = \mathbf{1.0}$ \\ \hline
+\end{tabular}
+\caption{Step-by-step probability accumulation for a 5-sample empirical profile.}
+\label{tab:empirical_walkthrough}
+\end{table}
+
+This tabular walkthrough illustrates the raw mechanics: the eCDF begins firmly at $0.0$, scales upwards by a fixed quantum step of $1/N$ at every unique data intersection, and locks cleanly at $1.0$ once all collected values are accounted for.
+
+\subsection*{Transformations of Random Variables: Mapping Probability Spaces}
+
+In real-world machine learning and statistical modeling, we rarely work exclusively with raw, unprocessed random variables. Instead, we constantly pass our variables through deterministic functions—whether scaling data, shifting coordinates, or pushing inputs through layers of a neural network. 
+
+If $X$ is a random variable governed by a distribution $p_X(x)$, and we define a new random variable through a deterministic mapping $Y = f(X)$, our goal is to systematically compute the resulting probability distribution $p_Y(y)$.
+
+---
+
+\subsubsection*{1. The Discrete Case: Aggregating Probability Mass}
+
+For discrete random variables, finding the new Probability Mass Function (PMF) is conceptually straightforward. Because a discrete distribution assigns distinct values real probabilities, we determine the probability of $Y = y$ by tracking down every single value of $x$ in the domain that maps onto $y$ under $f$, and summing their respective masses.
+
+Formally, the transformation rule is defined as:
+\begin{equation}
+p_Y(y) = \sum_{x : f(x) = y} p_X(x) \tag{211}
+\end{equation}
+
+\paragraph{Comprehensive Numerical Example (Many-to-One Mapping)}
+Let $X$ be a discrete random variable uniformly distributed on the set of integers from 1 to 10, meaning its PMF is constant: $p_X(x) = \frac{1}{10} = 0.1$ for all $x \in \{1, 2, \dots, 10\}$. 
+
+Now, let us apply a quantization function $f(X)$ defined as:
+\begin{equation*}
+f(X) = 
+\begin{cases} 
+1 & \text{if } X \text{ is even} \\ 
+0 & \text{if } X \text{ is odd} 
+\end{cases}
+\end{equation*}
+
+To compute the PMF of the transformed variable $Y$, we isolate the pre-image sets for both possible outcomes:
+\begin{itemize}
+    \item \textbf{For $Y = 1$:} The values of $x$ that satisfy $f(x) = 1$ are the even numbers $\{2, 4, 6, 8, 10\}$.
+    \begin{equation*}
+    p_Y(1) = \sum_{x \in \{2,4,6,8,10\}} p_X(x) = 0.1 + 0.1 + 0.1 + 0.1 + 0.1 = \mathbf{0.5}
+    \end{equation*}
+    \item \textbf{For $Y = 0$:} The values of $x$ that satisfy $f(x) = 0$ are the odd numbers $\{1, 3, 5, 7, 9\}$.
+    \begin{equation*}
+    p_Y(0) = \sum_{x \in \{1,3,5,7,9\}} p_X(x) = 0.1 + 0.1 + 0.1 + 0.1 + 0.1 = \mathbf{0.5}
+    \end{equation*}
+\end{itemize}
+Because $f$ is a **many-to-one function**, the transformation compresses a 10-sided uniform distribution into a perfectly balanced Bernoulli (coin-flip) distribution.
+
+---
+
+\subsubsection*{2. The Continuous Case: The Fundamental Pathology of Densities}
+
+When moving to continuous random variables, we encounter a fundamental trap. For a continuous variable, the probability of hitting any exact single point is identically zero ($P(X = x) = 0$). The value $p_X(x)$ represents a **probability density**, not an absolute mass, meaning we cannot compute $p_Y(y)$ by simply summing up individual density coordinates. Doing so would violate the core foundations of calculus.
+
+To transform continuous variables correctly, we must shift our perspective from points to intervals. We achieve this by routing the transformation through the **Cumulative Distribution Function (CDF)**:
+\begin{equation}
+P_Y(y) \triangleq \mathbb{P}(Y \le y) = \mathbb{P}(f(X) \le y) = \mathbb{P}\left(X \in \{x \mid f(x) \le y\}\right) \tag{212}
+\end{equation}
+By calculating the accumulated mass over the continuous region where $f(x) \le y$, we can obtain the final transformed Probability Density Function (PDF) by differentiating the resulting CDF: $p_Y(y) = \frac{d}{dy}P_Y(y)$.
+
+---
+
+\subsubsection*{3. Invertible Transformations (Bijections) and the Scalar Change of Variables}
+
+If the mapping function $f: \mathbb{R} \to \mathbb{R}$ is strictly monotonic (either strictly increasing or strictly decreasing), it forms a **bijection**. This means $f$ is perfectly invertible, allowing us to define an un-mapping function $g = f^{-1}$ such that $x = g(y)$.
+
+\paragraph{Geometric Intuition: Conservation of Mass}
+Consider an infinitesimal interval on the $x$-axis spanning from $x$ to $x + dx$. When passed through a smooth function $f$, this interval maps directly to a corresponding infinitesimal interval $(y, y + dy)$ on the $y$-axis. 
+
+Because the deterministic function merely stretches or compresses the coordinate space without destroying or creating raw probability, **the total probability mass contained within these corresponding intervals must be conserved.**
+
+\begin{equation}
+p_Y(y) \cdot |dy| = p_X(x) \cdot |dx| \tag{213}
+\end{equation}
+Rearranging this conservation relation to isolate our target density yields:
+\begin{equation*}
+p_Y(y) = p_X(x) \left| \frac{dx}{dy} \right|
+\end{equation*}
+
+\paragraph{Rigorous First-Principles Derivation via the Chain Rule}
+Let us mathematically validate this geometric intuition. Assume $f$ is a strictly monotonically increasing function. Because it preserves ordering, the statement $f(X) \le y$ is mathematically equivalent to writing $X \le f^{-1}(y)$. 
+
+Using our inverse function $g(y) = f^{-1}(y)$, we write out the CDF transformation chain:
+\begin{equation}
+P_Y(y) = \mathbb{P}(f(X) \le y) = \mathbb{P}(X \le g(y)) = P_X(g(y)) \tag{214}
+\end{equation}
+
+To compute the target PDF $p_Y(y)$, we take the derivative of the continuous CDF $P_Y(y)$ with respect to $y$. Applying the **Calculus Chain Rule** to the right-hand side yields:
+\begin{align*}
+p_Y(y) \triangleq \frac{d}{dy} P_Y(y) &= \frac{d}{dy} \left[ P_X(g(y)) \right] \\
+&= \frac{d}{dx} P_X(g(y)) \cdot \frac{dg(y)}{dy} \\
+&= p_X(g(y)) \cdot \frac{dx}{dy}
+\end{align*}
+
+If the function $f$ is instead strictly monotonically decreasing, the inequality flips: $\mathbb{P}(f(X) \le y) = \mathbb{P}(X \ge g(y)) = 1 - P_X(g(y))$. Differentiating this alternative setup introduces a negative sign: $-p_X(g(y)) \cdot \frac{dx}{dy}$. 
+
+To encapsulate both increasing and decreasing monotonic behavior into a single universal formula, we apply the absolute value modifier to the derivative. This yields the formal **Change of Variables Formula**:
+\begin{equation}
+p_Y(y) = p_X(g(y)) \cdot \left| \frac{d}{dy} g(y) \right| \tag{215}
+\end{equation}
+The absolute derivative term $\left| \frac{dg(y)}{dy} \right|$ acts as a local scaling factor (a one-dimensional Jacobian) that stretches or shrinks the density to ensure the transformed space integrates perfectly to $1$.
+
+---
+
+\subsubsection*{4. Comprehensive Numerical Walkthrough: The Affine Transform}
+
+Let's ground this theory by applying an affine transformation to a standard continuous uniform distribution. Suppose $X$ is a random variable distributed uniformly over the unit interval:
+\begin{equation*}
+X \sim \text{Unif}(0, 1) \implies p_X(x) = 1 \quad \text{for } x \in [0, 1]
+\end{equation*}
+
+We pass this variable through a scaling and shifting function to define $Y$:
+\begin{equation*}
+Y = f(X) = 2X + 1
+\end{equation*}
+
+Let's compute the resulting density $p_Y(y)$ step-by-step using our derived framework:
+\begin{enumerate}
+    \item \textbf{Invert the mapping function to find $g(y)$:}
+    \begin{equation*}
+    y = 2x + 1 \implies 2x = y - 1 \implies x = g(y) = \frac{y - 1}{2}
+    \end{equation*}
+    \item \textbf{Compute the coordinate scaling factor (the derivative):}
+    \begin{equation*}
+    \frac{d}{dy} g(y) = \frac{d}{dy} \left( \frac{y}{2} - \frac{1}{2} \right) = \frac{1}{2}
+    \end{equation*}
+    \item \textbf{Map the original domain limits into the new $Y$-space:}
+    \begin{itemize}
+        \item Lower boundary: $x = 0 \implies y = 2(0) + 1 = 1$
+        \item Upper boundary: $x = 1 \implies y = 2(1) + 1 = 3$
+    \end{itemize}
+    Thus, the valid domain of $Y$ is bounded between $1 \le y \le 3$.
+    \item \textbf{Assemble the final density using Equation (215):}
+    \begin{equation*}
+    p_Y(y) = p_X\left(\frac{y-1}{2}\right) \cdot \left| \frac{1}{2} \right| = 1 \cdot \frac{1}{2} = \mathbf{0.5} \quad \text{for } y \in [1, 3]
+    \end{equation*}
+\end{enumerate}
+
+This result perfectly aligns with intuition: stretching the domain to twice its original width ($[0,1] \to [1,3]$) requires the original density height to drop by half (from $1.0$ down to $0.5$) to ensure the total area under the probability box remains exactly $1.0$.
+
+\subsection*{Multivariate Transformations and Moments of Linear Systems}
+
+When transforming a vector of random variables, mapping probability elements becomes a geometric problem. Instead of scaling a 1D interval length ($dx$), a multivariate function warps the boundaries of an $n$-dimensional volume element.
+
+---
+
+\subsubsection*{1. The Multivariate Change of Variables Formula}
+
+Let $\mathbf{X}$ be a continuous random vector in $\mathbb{R}^n$ governed by a joint probability density function $p_\mathbf{X}(\mathbf{x})$. Let $\mathbf{Y} = f(\mathbf{X})$ be a deterministic, multi-dimensional transformation where $f: \mathbb{R}^n \to \mathbb{R}^n$ is a smooth, invertible function (a bijection). Because it is invertible, there exists an inverse mapping $g = f^{-1}$ such that $\mathbf{x} = g(\mathbf{y})$.
+
+By direct analogy to the scalar conservation-of-mass principle ($p_Y(y)|dy| = p_X(x)|dx|$), the joint density function of the transformed vector $\mathbf{Y}$ is given by:
+\begin{equation}
+p_\mathbf{Y}(\mathbf{y}) = p_\mathbf{X}(g(\mathbf{y})) \cdot \left| \det \left( \mathbf{J}_g(\mathbf{y}) \right) \right| \tag{216}
+\end{equation}
+where $\mathbf{J}_g(\mathbf{y})$ represents the **Jacobian Matrix** of the inverse transformation function $g$, and $\left| \det(\cdot) \right|$ denotes the absolute value of its determinant.
+
+---
+
+\subsubsection*{2. Conceptual Breakdown: Demystifying the Jacobian and its Determinant}
+
+To understand Equation (216), we must unpack what the Jacobian and its determinant represent geometrically.
+
+\paragraph{What is the Jacobian Matrix?}
+In single-variable calculus, the derivative $f'(x)$ tells you the local slope of a curve. In multi-dimensional space, a function has multiple inputs and multiple outputs. The Jacobian matrix is simply an organized grid of all possible first-order partial derivatives. It acts as a **local linear approximation** of a non-linear transformation.
+
+If $g(\mathbf{y})$ maps an input vector $\mathbf{y} = [y_1, y_2, \dots, y_n]^T$ to an output vector $\mathbf{x} = [x_1, x_2, \dots, x_n]^T$, the Jacobian matrix is structured as:
+\begin{equation*}
+\mathbf{J}_g = \frac{\partial g(\mathbf{y})}{\partial \mathbf{y}^T} = 
+\begin{bmatrix}
+\frac{\partial x_1}{\partial y_1} & \frac{\partial x_1}{\partial y_2} & \dots & \frac{\partial x_1}{\partial y_n} \\
+\frac{\partial x_2}{\partial y_1} & \frac{\partial x_2}{\partial y_2} & \dots & \frac{\partial x_2}{\partial y_n} \\
+\vdots & \vdots & \ddots & \vdots \\
+\frac{\partial x_n}{\partial y_1} & \frac{\partial x_n}{\partial y_2} & \dots & \frac{\partial x_n}{\partial y_n}
+\end{bmatrix}
+\end{equation*}
+
+\paragraph{Why the Determinant Matters}
+Imagine a tiny, perfect hypercube in your original coordinate space. When you pass this hypercube through a transformation function, its straight edges twist and stretch, turning it into a slanted parallelotope. 
+
+The **determinant of a matrix** calculates the exact volume change factor of that transformation. 
+\begin{itemize}
+    \item If $\det(\mathbf{J}) = 2$, the transformation has expanded the local region to twice its original volume.
+    \item If $\det(\mathbf{J}) = 0.5$, the region has been compressed down to half its original volume.
+\end{itemize}
+Multiplying by $\left| \det \mathbf{J}_g(\mathbf{y}) \right|$ acts as a correction factor that adjusts the probability density height so that the total volume integrated over the new coordinate system still sums perfectly to $1.0$.
+
+\begin{tcolorbox}[colback=blue!5!white, colframe=blue!60!black, title=Geometric Example: 2D Affine Expansion]
+Consider a simple linear mapping $\mathbf{y} = \mathbf{A}\mathbf{x} + \mathbf{b}$ where $\mathbf{A} = \begin{bmatrix} a & c \\ b & d \end{bmatrix}$. If we track how this matrix transforms a simple unit square (with an initial area of $1 \times 1 = 1$), the square deforms into a slanted parallelogram. 
+
+The area of this new parallelogram is given precisely by the matrix determinant:
+\begin{equation*}
+\det(\mathbf{A}) = ad - bc
+\end{equation*}
+Thus, any linear transformation scales local space uniformly across the entire domain by a constant factor of $\det(\mathbf{A})$.
+\end{tcolorbox}
+
+---
+
+\subsubsection*{3. Comprehensive Derivation: Transforming Cartesian to Polar Coordinates}
+
+Let's look at a classic non-linear transformation: converting a 2D continuous probability distribution from standard Cartesian coordinates $\mathbf{x} = (x_1, x_2)$ over to Polar coordinates $\mathbf{y} = (r, \theta)$.
+
+The inverse transformation function $g(r, \theta)$ maps the radius $r$ and angle $\theta$ back into standard Cartesian coordinates via trigonometry:
+\begin{align*}
+x_1 &= g_1(r, \theta) = r \cos \theta \\
+x_2 &= g_2(r, \theta) = r \sin \theta
+\end{align*}
+
+Let us derive the transformed probability density function step-by-step:
+
+\paragraph{Step 1: Construct the Jacobian Matrix}
+We compute all four partial derivatives of our coordinate transformation:
+\begin{align*}
+\frac{\partial x_1}{\partial r} &= \frac{\partial}{\partial r}(r \cos \theta) = \cos \theta, \quad & \frac{\partial x_1}{\partial \theta} = \frac{\partial}{\partial \theta}(r \cos \theta) = -r \sin \theta \\
+\frac{\partial x_2}{\partial r} &= \frac{\partial}{\partial r}(r \sin \theta) = \sin \theta, \quad & \frac{\partial x_2}{\partial \theta} = \frac{\partial}{\partial \theta}(r \sin \theta) = r \cos \theta
+\end{align*}
+Arranging these into our Jacobian matrix grid yields:
+\begin{equation}
+\mathbf{J}_g = 
+\begin{bmatrix}
+\frac{\partial x_1}{\partial r} & \frac{\partial x_1}{\partial \theta} \\
+\frac{\partial x_2}{\partial r} & \frac{\partial x_2}{\partial \theta}
+\end{bmatrix} =
+\begin{bmatrix}
+\cos \theta & -r \sin \theta \\
+\sin \theta & r \cos \theta
+\end{bmatrix} \tag{217}
+\end{equation}
+
+\paragraph{Step 2: Compute the Determinant Value}
+Next, we evaluate the determinant using standard cross-multiplication ($ad - bc$) and apply the fundamental trigonometric identity $\cos^2 \theta + \sin^2 \theta = 1$:
+\begin{align*}
+\det(\mathbf{J}_g) &= (\cos \theta)(r \cos \theta) - (-r \sin \theta)(\sin \theta) \\
+&= r \cos^2 \theta + r \sin^2 \theta \\
+&= r \left( \cos^2 \theta + \sin^2 \theta \right) = r
+\end{align*}
+Taking the absolute value (since radius $r \ge 0$):
+\begin{equation}
+\left| \det(\mathbf{J}_g) \right| = r \tag{218}
+\end{equation}
+
+\paragraph{Step 3: Assemble the Transformed Density Function}
+Plugging this geometric scaling factor directly into our master multivariate formula (Equation 216):
+\begin{equation}
+p_{R, \Theta}(r, \theta) = p_{X_1, X_2}(r \cos \theta, r \sin \theta) \cdot r \tag{219}
+\end{equation}
+
+\paragraph{Geometric Verification}
+This mathematical derivation perfectly matches physical geometry. If you look at an infinitesimal area element in polar coordinates, a small change in radius ($dr$) and a small change in angle ($d\theta$) does not create a simple rectangle. Because the arc length widens as you move away from the center, the area of that tiny curved patch scales linearly with the radius:
+\begin{equation}
+\mathbb{P}(r \le R \le r + dr, \, \theta \le \Theta \le \theta + d\theta) \approx p_{R, \Theta}(r, \theta) \, dr \, d\theta \tag{220}
+\end{equation}
+Substituting our derived density expression yields:
+\begin{equation}
+p_{R, \Theta}(r, \theta) \, dr \, d\theta = p_{X_1, X_2}(r \cos \theta, r \sin \theta) \cdot \mathbf{r \, dr \, d\theta} \tag{221}
+\end{equation}
+The term $\mathbf{r \, dr \, d\theta}$ is the exact differential area element used in multivariable double integration.
+
+---
+
+\subsubsection*{4. Moments of an Affine/Linear Transformation}
+
+While tracking full probability distributions through non-linear functions requires calculating complex Jacobians, calculating the summary statistics—namely the **Mean vector** and **Covariance matrix**—under a linear (affine) transformation is much simpler.
+
+Let $\mathbf{X}$ be a random vector with an expected mean vector $\mathbb{E}[\mathbf{X}] = \boldsymbol{\mu}$ and a covariance matrix $\text{Cov}[\mathbf{X}] = \boldsymbol{\Sigma}$. We define a new random vector via an affine transformation:
+\begin{equation*}
+\mathbf{Y} = \mathbf{A}\mathbf{X} + \mathbf{b}
+\end{equation*}
+where $\mathbf{A}$ is a constant scaling matrix and $\mathbf{b}$ is a constant shifting vector.
+
+\paragraph{Linearity of the Mean (Expectation Value)}
+Because expectation is a linear operator, it distributes directly across matrix multiplication and vector addition:
+\begin{equation}
+\mathbb{E}[\mathbf{Y}] = \mathbb{E}[\mathbf{A}\mathbf{X} + \mathbf{b}] = \mathbf{A}\mathbb{E}[\mathbf{X}] + \mathbf{b} = \mathbf{A}\boldsymbol{\mu} + \mathbf{b} \tag{222}
+\end{equation}
+
+If the output is mapped down to a simple scalar using a projection vector $\mathbf{a}$ (so $y = \mathbf{a}^T\mathbf{X} + b$), this relation simplifies to:
+\begin{equation}
+\mathbb{E}[\mathbf{a}^T\mathbf{X} + b] = \mathbf{a}^T\boldsymbol{\mu} + b \tag{223}
+\end{equation}
+
+\paragraph{Transformation of the Covariance Structure}
+Covariance tracks how variables fluctuate around their respective means. Let's derive how the covariance matrix transforms under an affine mapping:
+\begin{align*}
+\text{Cov}[\mathbf{Y}] &= \mathbb{E}\left[ (\mathbf{Y} - \mathbb{E}[\mathbf{Y}])(\mathbf{Y} - \mathbb{E}[\mathbf{Y}])^T \right] \\
+&= \mathbb{E}\left[ ((\mathbf{A}\mathbf{X} + \mathbf{b}) - (\mathbf{A}\boldsymbol{\mu} + \mathbf{b}))((\mathbf{A}\mathbf{X} + \mathbf{b}) - (\mathbf{A}\boldsymbol{\mu} + \mathbf{b}))^T \right]
+\end{align*}
+Notice that the constant shift vector $\mathbf{b}$ cancels out completely:
+\begin{align*}
+\text{Cov}[\mathbf{Y}] &= \mathbb{E}\left[ (\mathbf{A}(\mathbf{X} - \boldsymbol{\mu}))(\mathbf{A}(\mathbf{X} - \boldsymbol{\mu}))^T \right]
+\end{align*}
+Applying the matrix transposition rule $(\mathbf{M}\mathbf{N})^T = \mathbf{N}^T\mathbf{M}^T$:
+\begin{align*}
+\text{Cov}[\mathbf{Y}] &= \mathbb{E}\left[ \mathbf{A}(\mathbf{X} - \boldsymbol{\mu})(\mathbf{X} - \boldsymbol{\mu})^T\mathbf{A}^T \right]
+\end{align*}
+Since the matrix $\mathbf{A}$ is a constant, we pull it completely outside of the expectation operator:
+\begin{equation}
+\text{Cov}[\mathbf{Y}] = \mathbf{A} \cdot \underbrace{\mathbb{E}\left[(\mathbf{X} - \boldsymbol{\mu})(\mathbf{X} - \boldsymbol{\mu})^T\right]}_{\boldsymbol{\Sigma}} \cdot \mathbf{A}^T = \mathbf{A}\boldsymbol{\Sigma}\mathbf{A}^T \tag{224}
+\end{equation}
+
+For a scalar-valued linear projection ($y = \mathbf{a}^T\mathbf{X} + b$), the resulting variance is:
+\begin{equation}
+\text{Var}[y] = \text{Var}[\mathbf{a}^T\mathbf{X} + b] = \mathbf{a}^T\boldsymbol{\Sigma}\mathbf{a} \tag{225}
+\end{equation}
+
+---
+
+\subsubsection*{5. Concrete Numerical Walkthrough: The Variance of a Sum}
+
+To see Equation (225) in action, let's derive the standard introductory statistics formula for the variance of the sum of two random variables ($X_1 + X_2$).
+
+We define our linear combination vector as $\mathbf{a} = [1, 1]^T$, which means $\mathbf{a}^T\mathbf{X} = [1, 1]\begin{bmatrix}x_1 \\ x_2\end{bmatrix} = x_1 + x_2$. The full covariance matrix tracking our 2D system is:
+\begin{equation*}
+\boldsymbol{\Sigma} = 
+\begin{bmatrix} 
+\Sigma_{11} & \Sigma_{12} \\ 
+\Sigma_{21} & \Sigma_{22} 
+\end{bmatrix} = 
+\begin{bmatrix} 
+\text{Var}[X_1] & \text{Cov}[X_1, X_2] \\ 
+\text{Cov}[X_2, X_1] & \text{Var}[X_2] 
+\end{bmatrix}
+\end{equation*}
+
+Let's compute the scalar variance by working through the matrix multiplications for $\mathbf{a}^T\boldsymbol{\Sigma}\mathbf{a}$ step-by-step:
+\begin{enumerate}
+    \item \textbf{Multiply $\boldsymbol{\Sigma}$ by the right-hand vector $\mathbf{a}$:}
+    \begin{equation*}
+    \boldsymbol{\Sigma}\mathbf{a} = 
+    \begin{bmatrix} 
+    \Sigma_{11} & \Sigma_{12} \\ 
+    \Sigma_{21} & \Sigma_{22} 
+    \end{bmatrix}
+    \begin{bmatrix} 1 \\ 1 \end{bmatrix} = 
+    \begin{bmatrix} 
+    \Sigma_{11}(1) + \Sigma_{12}(1) \\ 
+    \Sigma_{21}(1) + \Sigma_{22}(1) 
+    \end{bmatrix} = 
+    \begin{bmatrix} 
+    \Sigma_{11} + \Sigma_{12} \\ 
+    \Sigma_{21} + \Sigma_{22} 
+    \end{bmatrix}
+    \end{equation*}
+    \item \textbf{Multiply the left-hand vector $\mathbf{a}^T$ by this resulting vector:}
+    \begin{align*}
+    \mathbf{a}^T(\boldsymbol{\Sigma}\mathbf{a}) &= 
+    \begin{bmatrix} 1 & 1 \end{bmatrix} 
+    \begin{bmatrix} \Sigma_{11} + \Sigma_{12} \\ \Sigma_{21} + \Sigma_{22} \end{bmatrix} \\
+    &= 1(\Sigma_{11} + \Sigma_{12}) + 1(\Sigma_{21} + \Sigma_{22}) \\
+    &= \Sigma_{11} + \Sigma_{22} + \Sigma_{12} + \Sigma_{21}
+    \end{align*}
+\end{enumerate}
+
+Because a covariance matrix is always completely symmetric ($\Sigma_{12} = \Sigma_{21} = \text{Cov}[X_1, X_2]$), combining those matching terms yields the final expression:
+\begin{equation}
+\text{Var}[X_1 + X_2] = \text{Var}[X_1] + \text{Var}[X_2] + 2\text{Cov}[X_1, X_2] \tag{226}
+\end{equation}
+
+This elegant matrix framework confirms that if two variables are positively correlated, the variance of their sum expands; if they are completely independent ($\text{Cov}[X_1,X_2]=0$), the variance of their sum simplifies to the sum of their individual variances.
+
+\section*{The Convolution Theorem: Sums of Independent Random Variables}
+
+A frequent challenge in machine learning and data science involves analyzing the behavior of a system that aggregates multiple distinct sources of uncertainty. Mathematically, this requires us to find the distribution of a new random variable $Y$ that is formed by the direct sum of two independent random variables:
+\begin{equation*}
+Y = X_1 + X_2 \quad \text{where } X_1 \perp X_2
+\end{equation*}
+
+The operation that defines this combination is known as a **convolution**. Depending on whether the underlying random variables are discrete or continuous, the convolution manifests as either an infinite sum or a definitive integral.
+
+---
+
+\subsubsection*{1. The Discrete Case: Combining Probability Masses}
+
+If $X_1$ and $X_2$ are discrete random variables, the Probability Mass Function (PMF) of their sum is calculated by considering every possible combination of integer values that can add up to a target value $j$. 
+
+If $X_1$ takes on a specific value $k$, then for the sum to equal $j$, $X_2$ must precisely equal $j - k$. Because $X_1$ and $X_2$ are independent, the joint probability of these two events occurring simultaneously is the product of their individual probabilities. Summing over all possible values of $k$ yields the discrete convolution formula:
+\begin{equation}
+p_Y(Y = j) = \sum_{k=-\infty}^{\infty} p_{X_1}(X_1 = k) \cdot p_{X_2}(X_2 = j - k) \tag{227}
+\end{equation}
+
+\paragraph{Intuitive Numerical Walkthrough: Rolling Two Fair Dice}
+Let $X_1$ and $X_2$ represent the outcomes of two independent fair six-sided dice rolls. Their PMFs are identical discrete uniform distributions over the set $\{1, 2, \dots, 6\}$, such that $p(x) = \frac{1}{6}$. Let's compute the distribution of their total sum, $Y = X_1 + X_2$, step-by-step using Equation (227):
+
+\begin{itemize}
+    \item \textbf{For $Y = 2$:} The only valid combination is $X_1 = 1$ and $X_2 = 1$.
+    \begin{equation*}
+    p_Y(2) = p_{X_1}(1)p_{X_2}(1) = \frac{1}{6} \cdot \frac{1}{6} = \mathbf{\frac{1}{36}}
+    \end{equation*}
+    \item \textbf{For $Y = 3$:} There are two permutations that yield a sum of 3: $(1,2)$ and $(2,1)$.
+    \begin{equation*}
+    p_Y(3) = p_{X_1}(1)p_{X_2}(2) + p_{X_1}(2)p_{X_2}(1) = \left(\frac{1}{6} \cdot \frac{1}{6}\right) + \left(\frac{1}{6} \cdot \frac{1}{6}\right) = \mathbf{\frac{2}{36}}
+    \end{equation*}
+    \item \textbf{For $Y = 7$:} This is the most statistically likely outcome, achievable through six distinct pathways: $(1,6), (2,5), (3,4), (4,3), (5,2), (6,1)$.
+    \begin{equation*}
+    p_Y(7) = \sum_{k=1}^{6} p_{X_1}(k)p_{X_2}(7-k) = 6 \cdot \left(\frac{1}{6} \cdot \frac{1}{6}\right) = \mathbf{\frac{6}{36}}
+    \end{equation*}
+\end{itemize}
+
+Continuing this systematic analysis across all outcomes from $Y=2$ to $Y=12$ builds a symmetric, triangular distribution. Interestingly, even though the inputs are perfectly flat uniform blocks, their sum begins to resemble a bell-shaped Gaussian curve—a foundational visualization of the Central Limit Theorem in action.
+
+---
+
+\subsubsection*{2. The Continuous Case: Rigorous First-Principles Derivation}
+
+When dealing with continuous random variables governed by probability density functions $p_1(x_1)$ and $p_2(x_2)$, we cannot simply add point probabilities. Instead, we must construct the proof rigorously by working directly with the **Cumulative Distribution Function (CDF)** of $Y$, integrating over the multi-dimensional sample space where the inequality $x_1 + x_2 \le y^*$ holds true.
+
+\paragraph{Step 1: Set up the Joint Cumulative Integral}
+The probability that the sum $Y$ is less than or equal to a target threshold $y^*$ is bounded by the line $x_2 = y^* - x_1$. We isolate the valid region by integrating $x_1$ over the entire real line, while bounding the inner integral of $x_2$ from $-\infty$ up to that shifting threshold:
+\begin{equation}
+P_Y(y^*) = \int_{-\infty}^{\infty} p_1(x_1) \left[ \int_{-\infty}^{y^* - x_1} p_2(x_2) \, dx_2 \right] dx_1 \tag{228}
+\end{equation}
+
+\paragraph{Step 2: Differentiate the CDF using the Leibniz Integral Rule}
+To find the explicit Probability Density Function $p_Y(y)$, we must take the derivative of our cumulative distribution function with respect to the threshold parameter: $p_Y(y) = \left. \frac{d}{dy^*} P_Y(y^*) \right|_{y^* = y}$. 
+
+Because the parameter we are differentiating with respect to ($y^*$) resides inside the boundaries of our integration setup, we must utilize the **Leibniz Integral Rule for differentiation under the integral sign**:
+\begin{equation}
+\frac{d}{dx} \int_{a(x)}^{b(x)} f(t) \, dt = f(b(x)) \cdot \frac{db(x)}{dx} - f(a(x)) \cdot \frac{da(x)}{dx} \tag{229}
+\end{equation}
+
+Let's apply this rule directly to the inner integral of Equation (228), treating $x_1$ temporarily as a constant with respect to $y^*$:
+\begin{itemize}
+    \item The upper integration limit is $b(y^*) = y^* - x_1 \implies \frac{db(y^*)}{dy^*} = \frac{d}{dy^*}(y^* - x_1) = 1$.
+    \item The lower integration limit is $a(y^*) = -\infty \implies \frac{da(y^*)}{dy^*} = 0$.
+\end{itemize}
+
+Substituting these components into the Leibniz framework transforms the inner bracket into a simple scalar expression:
+\begin{equation*}
+\frac{d}{dy^*} \left[ \int_{-\infty}^{y^* - x_1} p_2(x_2) \, dx_2 \right] = p_2(y^* - x_1) \cdot (1) - p_2(-\infty) \cdot (0) = p_2(y^* - x_1)
+\end{equation*}
+
+\paragraph{Step 3: Assemble the Continuous Convolution Formula}
+Now, passing the derivative operator through the outer integral and substituting our localized Leibniz result yields the foundational **Continuous Convolution Theorem**:
+\begin{equation}
+p_Y(y) = \int_{-\infty}^{\infty} p_1(x_1) \cdot p_2(y - x_1) \, dx_1 \tag{230}
+\end{equation}
+
+We can compactly express this entire operation using the shorthand convolution operator symbol ($\circledast$):
+\begin{equation}
+p_Y = p_1 \circledast p_2 \tag{231}
+\end{equation}
+
+---
+
+\subsubsection*{3. Intuitive Visualization: The "Flip and Drag" Operation}
+
+To gain a strong mechanical intuition for what Equation (230) is doing, look closely at the inputs inside the integral: $p_1(x_1)$ and $p_2(y - x_1)$. The variable of integration is $x_1$. 
+
+The transformation of the second function's argument from a standard variable to $p_2(y - x_1)$ can be broken down into two geometric steps:
+\begin{enumerate}
+    \item \textbf{Flip:} The negative sign converts $p_2(x_1)$ into $p_2(-x_1)$, reflecting the entire distribution horizontally across the vertical axis.
+    \item \textbf{Drag:} The parameter $y$ acts as a spatial shift modifier, dragging the flipped distribution along the $x_1$-axis.
+\end{enumerate}
+
+The convolution process systematically slides this flipped version of $p_2$ across the static profile of $p_1$. At every step along the way, the engine multiplies the overlapping values of the two curves together and integrates the remaining area. The resulting integrated area at displacement $y$
+
+\subsection*{The Central Limit Theorem and Monte Carlo Approximation}
+
+We conclude our exploration of univariate transformations by examining two of the most powerful foundational tools in statistical data science: an asymptotic analytical law (the Central Limit Theorem) and a distribution-agnostic numerical strategy (Monte Carlo approximation).
+
+---
+
+\section*{The Central Limit Theorem (CLT): The Universal Attractor}
+
+The **Central Limit Theorem (CLT)** states that when you add together a large number of independent and identically distributed (i.i.d.) random variables, their normalized sum converges gracefully to a Gaussian distribution—**regardless of the original shape of the parent distribution**.
+
+\paragraph{Mathematical Setup:}
+Let $X_1, X_2, \dots, X_N$ be a sequence of $N$ i.i.d. random variables drawn from an arbitrary probability density function $p(X)$. The only constraint is that the underlying distribution must possess a finite mean $\mu$ and a finite variance $\sigma^2$:
+\begin{equation*}
+\mathbb{E}[X_n] = \mu, \quad \text{Var}[X_n] = \sigma^2 < \infty \quad \forall n \in \{1, \dots, N\}
+\end{equation*}
+
+Let $S_N = \sum_{n=1}^N X_n$ be the running sum of these variables. By applying the linearity properties of expectation and variance for independent variables, we find the parameters governing the sum:
+\begin{align*}
+\mathbb{E}[S_N] &= \sum_{n=1}^N \mathbb{E}[X_n] = N\mu \\
+\text{Var}[S_N] &= \sum_{n=1}^N \text{Var}[X_n] = N\sigma^2
+\end{align*}
+
+As $N \to \infty$, the true probability density function of the sum $S_N$ approaches an absolute normal curve:
+\begin{equation}
+p(S_N = u) \approx \frac{1}{\sqrt{2\pi N \sigma^2}} \exp\left( -\frac{(u - N\mu)^2}{2N\sigma^2} \right) \tag{233}
+\end{equation}
+
+To frame this as a limit convergence theorem that scales invariant of $N$, we construct a standardized random variable $Z_N$ by subtracting the expected mean and dividing by the systemic standard deviation:
+\begin{equation}
+Z_N \triangleq \frac{S_N - N\mu}{\sigma \sqrt{N}} = \frac{\bar{X} - \mu}{\sigma / \sqrt{N}} \tag{234}
+\end{equation}
+where $\bar{X} = \frac{S_N}{N}$ represents the sample mean. The Central Limit Theorem states that the distribution of $Z_N$ converges weakly to the standard normal distribution $\mathcal{N}(0, 1)$ as $N \to \infty$.
+
+---
+
+\subsubsection*{2. Rigorous Mathematical Proof Sketch via Moment Generating Functions}
+
+To see why a Gaussian distribution inevitably emerges out of non-Gaussian systems, we can execute a proof sketch utilizing **Moment Generating Functions (MGFs)**. 
+
+Let us define a zero-mean, unit-variance standardized version of our individual inputs: $Y_n = \frac{X_n - \mu}{\sigma}$. By definition, $\mathbb{E}[Y_n] = 0$ and $\mathbb{E}[Y_n^2] = 1$. The MGF of any random variable $Y$, denoted $M_Y(t) \triangleq \mathbb{E}[e^{tY}]$, can be expanded via a Taylor series around $t=0$:
+\begin{equation*}
+M_{Y_n}(t) = \mathbb{E}\left[ 1 + tY_n + \frac{t^2}{2!}Y_n^2 + \frac{t^3}{3!}Y_n^3 + \dots \right] = 1 + t\mathbb{E}[Y_n] + \frac{t^2}{2}\mathbb{E}[Y_n^2] + \mathcal{O}(t^3)
+\end{equation*}
+Substituting our known moments $\mathbb{E}[Y_n]=0$ and $\mathbb{E}[Y_n^2]=1$ simplifies the individual MGF to:
+\begin{equation}
+M_{Y_n}(t) = 1 + \frac{t^2}{2} + \mathcal{O}(t^3) \tag{235}
+\end{equation}
+
+Now, let's look at our standardized sum variable $Z_N$, which can be rewritten as a sum of these standardized components:
+\begin{equation*}
+Z_N = \frac{\sum X_n - N\mu}{\sigma \sqrt{N}} = \frac{1}{\sqrt{N}}\sum_{n=1}^N \left(\frac{X_n - \mu}{\sigma}\right) = \frac{1}{\sqrt{N}}\sum_{n=1}^N Y_n
+\end{equation*}
+
+Because the variables are independent, the MGF of a sum of scaled variables is equal to the product of their individual MGFs evaluated at $\frac{t}{\sqrt{N}}$:
+\begin{equation}
+M_{Z_N}(t) = \prod_{n=1}^N M_{Y_n}\left(\frac{t}{\sqrt{N}}\right) = \left[ 1 + \frac{\left(\frac{t}{\sqrt{N}}\right)^2}{2} + \mathcal{O}\left(\frac{t^3}{N^{3/2}}\right) \right]^N = \left[ 1 + \frac{t^2}{2N} + \mathcal{O}\left(\frac{t^3}{N^{3/2}}\right) \right]^N \tag{236}
+\end{equation}
+
+To evaluate this function as $N \to \infty$, we invoke the fundamental calculus identity $\lim_{N\to\infty} \left(1 + \frac{k}{N}\right)^N = e^k$. Setting $k = \frac{t^2}{2}$:
+\begin{equation}
+\lim_{N \to \infty} M_{Z_N}(t) = e^{\frac{t^2}{2}} \tag{237}
+\end{equation}
+
+The term $e^{t^2/2}$ is the exact mathematical Moment Generating Function of a standard normal distribution $\mathcal{N}(0,1)$. Since a distribution is uniquely determined by its MGF, $Z_N$ is proven to converge directly to a Gaussian profile as the sample volume scales out.
+
+---
+
+\section*{The Monte Carlo Approximation: Embracing Brute Force}
+
+While the CLT provides an elegant analytical limit for sums, calculating the exact distribution of a highly non-linear transformation $Y = f(X)$ is often mathematically intractable or impossible to solve by hand.
+
+The **Monte Carlo approximation** bypasses analytical calculus entirely by substituting programmatic sampling for complex integrations. Instead of tracking the continuous mathematical transformation of a probability density curve, we draw a massive set of independent samples directly from the input distribution, pass each point through our transformation function $f(x)$, and examine the resulting empirical layout.
+
+\paragraph{Algorithmic Pipeline:}
+\begin{enumerate}
+    \item Draw $N_s$ independent samples from the source distribution: $x^{(1)}, x^{(2)}, \dots, x^{(N_s)} \sim p_X(x)$.
+    \item Map each individual sample through the target function: $y^{(s)} = f(x^{(s)})$ for $s = 1, \dots, N_s$.
+    \item Approximate the continuous target PDF $p_Y(y)$ using the resulting point collection to construct an empirical distribution:
+    \begin{equation}
+    \hat{p}_S(y) \triangleq \frac{1}{N_s} \sum_{s=1}^{N_s} \delta(y - y^{(s)}) \tag{238}
+    \end{equation}
+\end{enumerate}
+By leveraging the Law of Large Numbers, as the sample count $N_s \to \infty$, this empirical assembly of delta spikes converges smoothly to the true analytical distribution $p_Y(y)$.
+
+---
+
+\subsubsection*{Comparative Case Study: Analytical vs. Monte Carlo Mapping}
+
+To demonstrate both paradigms, let's analyze a non-linear transformation that features a geometric shape deformation. Suppose $X$ is a continuous random variable distributed uniformly over a symmetric domain:
+\begin{equation*}
+X \sim \text{Unif}(-1, 1) \implies p_X(x) = \frac{1}{1 - (-1)} = 0.5 \quad \text{for } x \in [-1, 1]
+\end{equation*}
+We push this variable through a squaring transformation function: $Y = f(X) = X^2$.
+
+\paragraph{Analytical Evaluation (The Change of Variables CDF Method)}
+Because the function $y = x^2$ is non-monotonic across the domain $[-1, 1]$, we cannot use the standard single-derivative Jacobian formula. Instead, we must rigorously evaluate the space from first principles using the cumulative transformation approach:
+\begin{equation*}
+P_Y(y) = \mathbb{P}(Y \le y) = \mathbb{P}(X^2 \le y)
+\end{equation*}
+Since $Y$ is bounded between $0$ and $1$, taking the square root of both sides opens a two-sided inequality range:
+\begin{equation*}
+P_Y(y) = \mathbb{P}\left(-\sqrt{y} \le X \le \sqrt{y}\right) = \int_{-\sqrt{y}}^{\sqrt{y}} p_X(x) \, dx
+\end{equation*}
+Substituting our constant uniform input density $p_X(x) = 0.5$:
+\begin{equation}
+P_Y(y) = \int_{-\sqrt{y}}^{\sqrt{y}} 0.5 \, dx = 0.5 \cdot \left[ \sqrt{y} - (-\sqrt{y}) \right] = \sqrt{y} \tag{239}
+\end{equation}
+To uncover the final target probability density function $p_Y(y)$, we differentiate this custom cumulative function with respect to $y$:
+\begin{equation}
+p_Y(y) = \frac{d}{dy} P_Y(y) = \frac{d}{dy}\left( y^{1/2} \right) = \frac{1}{2\sqrt{y}} \quad \text{for } y \in (0, 1] \tag{240}
+\end{equation}
+
+This analytical calculation reveals a severe geometric transformation: flattening out a uniform block via a squaring function forces the probability density to skyrocket towards infinity ($\lim_{y \to 0} \frac{1}{2\sqrt{y}} = \infty$) as it nears the origin.
+
+\paragraph{The Monte Carlo Alternative}
+Rather than navigating the multi-valued split limits required to compute Equation (240), a data scientist can approximate this system using a standard four-line code loop:
+
+\begin{tcolorbox}[colback=gray!5!white, colframe=gray!60!black, title=Conceptual Monte Carlo Execution Engine]
+\begin{enumerate}
+    \item Generate $N_s = 100,000$ floating-point values distributed evenly between $-1.0$ and $1.0$.
+    \item Element-wise square every sample in the array ($y^{(s)} = [x^{(s)}]^2$).
+    \item Plot a normalized frequency histogram of the resulting array using a series of fine bins.
+\end{enumerate}
+\end{tcolorbox}
+
+As the size of the generated array grows, the density of the sampled values naturally packs tighter around the zero region, because squaring fractions squashes them down toward the origin. The resulting normalized histogram matches the analytical curve $p_Y(y) = \frac{1}{2\sqrt{y}}$ with high fidelity, verifying how simple algorithmic sampling can accurately characterize complex, non-linear mathematical probability spaces.
+
 \end{document}
